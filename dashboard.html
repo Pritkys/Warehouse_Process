@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Дашборд склада</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      background-color: #f5f7fa;
+    }
+
+    header {
+      background-color: #2a3f54;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    main {
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #2a3f54;
+    }
+
+    .charts-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .chart-block {
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      padding: 20px;
+      flex: 1 1 400px;
+      max-width: 500px;
+    }
+
+    .chart-block canvas {
+      display: block;
+      margin: 0 auto;
+    }
+
+    .chart-block h3 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #2a3f54;
+    }
+
+    .metrics-row {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 30px;
+      margin-top: 20px;
+    }
+
+    .metric-box {
+      background-color: #f0f4f8;
+      border-radius: 12px;
+      padding: 20px 40px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .metric-title {
+      font-weight: 600;
+      font-size: 1.1em;
+      color: #2a3f54;
+      margin-bottom: 10px;
+    }
+
+    .metric-value {
+      font-size: 2.5em;
+      color: #00bfa6;
+    }
+
+    a {
+      color: white;
+      text-decoration: none;
+    }
+
+    @media (max-width: 1024px) {
+      .charts-row,
+      .metrics-row {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html">← Назад</a>
+  </header>
+
+  <main>
+    <h2>📊 Данные по заполненности склада</h2>
+
+    <div class="charts-row">
+      <div class="chart-block">
+        <h3>Общая загрузка склада</h3>
+        <canvas id="overallChart" width="300" height="300"></canvas>
+      </div>
+      <div class="chart-block">
+        <h3>Загрузка по секциям</h3>
+        <canvas id="sectionChart" height="300"></canvas>
+      </div>
+    </div>
+
+    <div class="metrics-row">
+      <div class="metric-box">
+        <div class="metric-title">Уникальных товаров на складе</div>
+        <div class="metric-value" id="uniqueCount">—</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-title">Всего единиц товаров на складе</div>
+        <div class="metric-value" id="totalUnits">—</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function loadDashboard() {
+      const res = await fetch("get_dashboard_data.php");
+      const data = await res.json();
+
+      const occupied = data.total.occupied;
+      const free = data.total.free;
+      const total = occupied + free;
+      const occupiedPercent = ((occupied / total) * 100).toFixed(1);
+      const freePercent = (100 - occupiedPercent).toFixed(1);
+
+      // Общая загрузка
+      new Chart(document.getElementById("overallChart"), {
+        type: 'doughnut',
+        data: {
+          labels: [`Занято ${occupiedPercent}%`, `Свободно ${freePercent}%`],
+          datasets: [{
+            data: [occupied, free],
+            backgroundColor: ["#ff6384", "#36a2eb"],
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { font: { size: 14 } }
+            }
+          }
+        }
+      });
+
+      // Загрузка по секциям
+      const sectionLabels = data.sections.map(s => `Секция ${s.section}`);
+      const sectionData = data.sections.map(s => s.percent);
+
+      new Chart(document.getElementById("sectionChart"), {
+        type: 'bar',
+        data: {
+          labels: sectionLabels,
+          datasets: [{
+            label: '% занятости',
+            data: sectionData,
+            backgroundColor: "#00bfa6"
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              ticks: { callback: val => val + '%' }
+            }
+          }
+        }
+      });
+
+      // Метрики
+      document.getElementById("uniqueCount").textContent = data.metrics.unique_products;
+      document.getElementById("totalUnits").textContent = data.metrics.total_units;
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>

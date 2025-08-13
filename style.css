@@ -1,0 +1,128 @@
+:root {
+  --primary: #2a3f54;
+  --accent: #00bfa6;
+  --light: #f5f7fa;
+  --white: #ffffff;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  --radius: 10px;
+  --transition: 0.3s ease;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  margin: 0;
+  background-color: var(--light);
+  color: #333;
+}
+
+header {
+  background-color: var(--primary);
+  color: var(--white);
+  padding: 20px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+header a {
+  color: var(--white);
+  text-decoration: none;
+  font-weight: bold;
+  transition: var(--transition);
+}
+
+header a:hover {
+  color: var(--accent);
+}
+
+main {
+  padding: 40px;
+  max-width: 1000px;
+  margin: auto;
+}
+
+h2 {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+}
+
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.card {
+  background-color: var(--white);
+  padding: 30px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+  flex: 1 1 calc(33% - 20px);
+  transition: transform var(--transition), box-shadow var(--transition);
+  text-align: center;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  color: var(--primary);
+}
+
+input, button {
+  display: block;
+  width: 100%;
+  max-width: 500px;
+  margin: 10px 0;
+  padding: 12px 15px;
+  font-size: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid #ccc;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+}
+
+input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+button {
+  background-color: var(--accent);
+  color: var(--white);
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+}
+
+button:hover {
+  background-color: #00a18a;
+}
+
+                                          /* ДОБАВЛЕНИЕ ТОВАРА СТИЛИ */
+.form-group {
+  margin-bottom: 20px;
+  max-width: 500px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--primary);
+}
+
+#generatedCode[readonly] {
+  background-color: #eee;
+  color: #777;
+  cursor: not-allowed;
+}

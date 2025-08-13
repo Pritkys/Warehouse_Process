@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Информация о товаре</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    select, button {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header><a href="index.html">← Назад</a></header>
+  <main>
+    <h2>Результат сканирования</h2>
+    <div id="scanResult"></div>
+    <div id="moveOptions"></div>
+  </main>
+
+  <script>
+    let currentProduct = null;
+
+    async function loadProductInfo() {
+      const params = new URLSearchParams(window.location.search);
+      const location = params.get("location");
+
+      if (!location) {
+        document.getElementById("scanResult").innerHTML = "<p>Не указано местоположение.</p>";
+        return;
+      }
+
+      try {
+        const response = await fetch(`get_product_by_location.php?location=${location}`);
+        const data = await response.json();
+
+        if (data.error) {
+          document.getElementById("scanResult").innerHTML = `<p style="color:red;">${data.error}</p>`;
+        } else {
+          currentProduct = data; // сохраняем товар
+
+          document.getElementById("scanResult").innerHTML = `
+            <p><strong>Название:</strong> ${data.name}</p>
+            <p><strong>Код товара:</strong> ${data.code}</p>
+            <p><strong>Количество:</strong> ${data.quantity}</p>
+            <p><strong>Размер (Д×Ш×В):</strong> ${data.length}×${data.width}×${data.height}</p>
+            <p><strong>Местоположение:</strong></p>
+            <ul>
+              <li><strong>Секция:</strong> ${data.section}</li>
+              <li><strong>Ряд:</strong> ${data.row_num}</li>
+              <li><strong>Полка:</strong> ${data.shelf}</li>
+              <li><strong>Место:</strong> ${data.place}</li>
+            </ul>
+            <button onclick="showMoveOptionsFromScan()">Переместить товар</button>
+            <button onclick="issueProduct()">Выдать товар</button>
+
+          `;
+        }
+      } catch (error) {
+        document.getElementById("scanResult").innerHTML = `<p style="color:red;">Ошибка при получении данных</p>`;
+        console.error("Ошибка:", error);
+      }
+    }
+
+    async function showMoveOptionsFromScan() {
+      if (!currentProduct || !currentProduct.length || !currentProduct.width || !currentProduct.height) {
+        alert("Отсутствуют размеры товара.");
+        return;
+      }
+
+      const response = await fetch("find_locations.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          length: currentProduct.length,
+          width: currentProduct.width,
+          height: currentProduct.height
+        })
+      });
+
+      const locations = await response.json();
+
+      if (!locations.length) {
+        document.getElementById("moveOptions").innerHTML = "<p style='color:red;'>Нет подходящих свободных мест.</p>";
+        return;
+      }
+
+      let options = locations.map(loc =>
+  `<option value="${loc.location_id}"> ${loc.location_id} (${loc.length}×${loc.width}×${loc.height})</option>`
+).join("");
+
+
+      document.getElementById("moveOptions").innerHTML = `
+        <label for="newLocation">Выберите новое место:</label>
+        <select id="newLocation">${options}</select>
+        <button onclick="confirmMoveFromScan()">Подтвердить перемещение</button>
+      `;
+    }
+
+    async function confirmMoveFromScan() {
+      const newLocationId = document.getElementById("newLocation").value;
+      const productId = currentProduct.id;
+
+      const response = await fetch("move_product.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+  code: currentProduct.code, 
+  new_location: newLocationId 
+})
+      });
+      
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert("Товар перемещён успешно.");
+        location.reload();
+      } else {
+        alert("Ошибка при перемещении товара: " + (result.error || "Неизвестная ошибка"));
+      }
+    }
+    function issueProduct() {
+  if (!currentProduct || !currentProduct.quantity) {
+    alert("Информация о товаре не загружена.");
+    return;
+  }
+  document.getElementById("issueQuantity").max = currentProduct.quantity;
+  document.getElementById("issueQuantity").value = "";
+  document.getElementById("issueModal").style.display = "block";
+}
+
+function closeIssueModal() {
+  document.getElementById("issueModal").style.display = "none";
+}
+
+async function submitIssue() {
+  const quantity = parseInt(document.getElementById("issueQuantity").value);
+  const max = parseInt(currentProduct.quantity);
+
+  if (isNaN(quantity) || quantity <= 0) {
+    alert("Введите корректное количество.");
+    return;
+  }
+  if (quantity > max) {
+    alert(`Максимум можно выдать ${max}.`);
+    return;
+  }
+
+  const response = await fetch("issue_product.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      code: currentProduct.code,
+      quantity: quantity,
+      location_id: currentProduct.location_id
+    })
+  });
+
+  const result = await response.json();
+
+  if (result.success) {
+    alert("Выдача успешно выполнена.");
+    window.location.href = "index.html";
+  } else {
+    alert("Ошибка при выдаче: " + (result.error || "Неизвестная ошибка"));
+  }
+}
+
+
+    window.onload = loadProductInfo;
+  </script>
+<div id="issueModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+  background:#fff; padding:20px; border:1px solid #ccc; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
+  <h3>Выдача товара</h3>
+  <p>Введите количество для выдачи:</p>
+  <input type="number" id="issueQuantity" min="1" style="margin-top: 10px; width: 100px; padding: 12px;" />
+
+  <div style="margin-top:10px;">
+    <button onclick="submitIssue()">Сохранить</button>
+    <button onclick="closeIssueModal()">Отмена</button>
+  </div>
+</div>
+</body>
+</html>

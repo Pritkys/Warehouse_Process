@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Поиск товара</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header><a href="index.html">← Назад</a></header>
+  <main>
+    <h2>Поиск товара</h2>
+
+        <!-- Поиск по названию -->
+    <div class="form-group">
+      <label for="searchName">Поиск по названию</label>
+      <input type="text" id="searchName" placeholder="Введите название товара">
+      <button onclick="searchByName()">Поиск</button>
+    </div>
+
+    <!-- Поиск по местоположению -->
+    <div class="form-group">
+      <label>Поиск по местоположению</label>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <input type="number" id="section" placeholder="Секция" min="1" style="flex: 1;">
+        <input type="number" id="row" placeholder="Ряд" min="1" style="flex: 1;">
+        <input type="number" id="shelf" placeholder="Полка" min="1" style="flex: 1;">
+        <input type="number" id="place" placeholder="Место" min="1" style="flex: 1;">
+      </div>
+      <button onclick="searchByLocation()">Поиск по местоположению</button>
+    </div>
+          <!-- Кнопка сканирования QR -->
+<div class="form-group">
+  <label>Сканирование QR с изображения</label>
+  <input type="file" id="qrFileInput" accept="image/*">
+</div>
+    <!-- Результаты -->
+    <div id="searchResult" style="margin-top: 30px;"></div>
+    <div id="results"></div>
+
+  </main>
+<script>
+  QrScanner = window.QrScanner;
+  QrScanner.WORKER_PATH = 'qr-scanner-worker.min.js';
+</script>
+<script src="/qr-scanner.umd.min.js"></script>
+<script>
+  const qrInput = document.getElementById("qrFileInput");
+
+  qrInput.addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const imageBitmap = await createImageBitmap(file);
+      const result = await QrScanner.scanImage(imageBitmap, {
+        returnDetailedScanResult: true
+      });
+
+      console.log("QR распознан:", result.data);
+      if (result.data.startsWith("http")) {
+        window.location.href = result.data;
+      } else {
+        alert("QR-код не содержит ссылку: " + result.data);
+      }
+
+    } catch (error) {
+      console.error("Ошибка при сканировании QR:", error);
+      alert("❌ Не удалось распознать QR-код. Попробуйте другое изображение.");
+    }
+  });
+</script>
+<script>
+  let currentProduct = null;
+
+  function showProductDetails(product) {
+    currentProduct = product;
+
+    document.getElementById("results").innerHTML = `
+      <p><strong>Название:</strong> ${product.name}</p>
+      <p><strong>Код:</strong> ${product.code}</p>
+      <p><strong>Количество:</strong> ${product.quantity}</p>
+      <p><strong>Размер:</strong> ${product.length}×${product.width}×${product.height}</p>
+      <p><strong>Местоположение:</strong> Секция ${product.section}, Ряд ${product.row}, Полка ${product.shelf}, Место ${product.place}</p>
+      <button onclick="issueProduct()">Выдать товар</button>
+    `;
+  }
+
+  function issueProduct() {
+    if (!currentProduct || !currentProduct.quantity) {
+      alert("Информация о товаре не загружена.");
+      return;
+    }
+    document.getElementById("issueQuantity").max = currentProduct.quantity;
+    document.getElementById("issueQuantity").value = "";
+    document.getElementById("issueModal").style.display = "block";
+  }
+
+  function closeIssueModal() {
+    document.getElementById("issueModal").style.display = "none";
+  }
+
+  async function submitIssue() {
+    const quantity = parseInt(document.getElementById("issueQuantity").value);
+    const max = parseInt(currentProduct.quantity);
+
+    if (isNaN(quantity) || quantity <= 0) {
+      alert("Введите корректное количество.");
+      return;
+    }
+    if (quantity > max) {
+      alert(`Максимум можно выдать ${max}.`);
+      return;
+    }
+
+    const response = await fetch("issue_product.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: currentProduct.code,
+        quantity: quantity,
+        location_id: currentProduct.location_id
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      alert("Выдача успешно выполнена.");
+      window.location.reload();
+    } else {
+      alert("Ошибка при выдаче: " + (result.error || "Неизвестная ошибка"));
+    }
+  }
+</script>
+
+
+
+
+  <script src="script.js"></script>
+  <div id="issueModal" style="display:none; position:fixed; top:70%; left:57%; transform:translate(-50%, -50%);
+  background:#fff; padding:20px; border:1px solid #ccc; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
+  <h3>Выдача товара</h3>
+  <p>Введите количество для выдачи:</p>
+  <input type="number" id="issueQuantity" min="1" style="margin-top: 10px; width: 100px; padding: 12px;" />
+
+  <div style="margin-top:10px;">
+    <button onclick="submitIssue()">Сохранить</button>
+    <button onclick="closeIssueModal()">Отмена</button>
+  </div>
+</div>
+
+</body>
+</html>

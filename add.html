@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Добавить товар</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <a href="index.html">← Назад</a>
+    <h1>Добавление товара</h1>
+  </header>
+
+  <main>
+    <h2>Новая запись на складе</h2>
+
+    <div class="form-group">
+      <label for="productName">Название товара</label>
+      <input type="text" id="productName" placeholder="Например: Шкаф металлический" />
+    </div>
+
+    <div class="form-group">
+      <label for="productQty">Количество</label>
+      <input type="number" id="productQty" placeholder="Например: 10" min="1" />
+    </div>
+
+    <div class="form-group">
+      <label>Размер (Д × Ш × В в см)</label>
+      <div class="size-inputs">
+        <input type="number" id="length" placeholder="Длина" min="1" />
+        <span class="multiply">×</span>
+        <input type="number" id="width" placeholder="Ширина" min="1" />
+        <span class="multiply">×</span>
+        <input type="number" id="height" placeholder="Высота" min="1" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Код товара</label>
+      <input type="text" id="generatedCode" readonly placeholder="Генерируется автоматически" />
+    </div>
+
+    
+    <!-- кнопка поиска подходящих мест -->
+<button onclick="findAvailableLocations()">Найти подходящие места</button>
+
+<!-- блок для выбора мест -->
+<div id="locationSelection" style="display:none;">
+  <label for="locationDropdown">Выберите место</label>
+  <select id="locationDropdown"></select>
+  <button onclick="submitProduct()">Добавить товар</button>
+</div>
+
+<!-- сообщение об успехе -->
+<p id="successMessage" style="color: green; font-weight: bold;"></p>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
